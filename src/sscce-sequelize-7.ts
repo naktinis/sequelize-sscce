@@ -17,8 +17,8 @@ export async function run() {
     logQueryParameters: true,
     benchmark: true,
     define: {
-      // For less clutter in the SSCCE
-      timestamps: false,
+      // Setting this to 'true' breaks the test
+      underscored: true,
     },
   });
 
@@ -28,6 +28,12 @@ export async function run() {
     @Attribute(DataTypes.TEXT)
     @NotNull
     declare name: string;
+
+    @Attribute(DataTypes.DATE)
+    declare createdAt: CreationOptional<Date>;
+
+    @Attribute(DataTypes.DATE)
+    declare updatedAt: CreationOptional<Date>;
   }
 
   sequelize.addModels([Foo]);
@@ -38,6 +44,19 @@ export async function run() {
   await sequelize.sync({ force: true });
   expect(spy).to.have.been.called;
 
-  console.log(await Foo.create({ name: 'TS foo' }));
+  const foo = await Foo.create({ name: 'TS foo' });
   expect(await Foo.count()).to.equal(1);
+
+  // Update the `createdAt` and `updatedAt` fields
+  await Foo.upsert({
+    id: foo.id,
+    name: 'TS foo updated',
+    createdAt: new Date('1990-01-01'),
+    updatedAt: new Date('1990-01-02'),
+  });
+
+  // Check if the `createdAt` and `updatedAt` fields are updated
+  const fooFetched = await Foo.findByPk(foo.id);
+  expect(fooFetched?.createdAt).to.eql(new Date('1990-01-01'));
+  expect(fooFetched?.updatedAt).to.eql(new Date('1990-01-02'));
 }

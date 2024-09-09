@@ -26,8 +26,5 @@ export function wrapOptions(options: Options = {}) {
     ...config,
   });
 
-  // @ts-expect-error
-  options.__isOptionsObject__ = true;
-
   return options;
 }
